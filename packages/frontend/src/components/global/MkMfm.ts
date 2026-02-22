@@ -14,6 +14,7 @@ import MkTime from '@/components/global/MkTime.vue';
 import MkLink from '@/components/MkLink.vue';
 import MkMention from '@/components/MkMention.vue';
 import MkEmoji from '@/components/global/MkEmoji.vue';
+import MkFormula from '@/components/MkFormula.vue';
 import MkCustomEmoji from '@/components/global/MkCustomEmoji.vue';
 import MkCode from '@/components/MkCode.vue';
 import MkCodeInline from '@/components/MkCodeInline.vue';
@@ -452,11 +453,19 @@ export default function (props: MfmProps, { emit }: { emit: SetupContext<MfmEven
 			}
 
 			case 'mathInline': {
-				return [h('code', token.props.formula)];
+				return [h(MkFormula, {
+					key: Math.random(),
+					formula: token.props.formula,
+					block: false,
+				})];
 			}
 
 			case 'mathBlock': {
-				return [h('code', token.props.formula)];
+				return [h(MkFormula, {
+					key: Math.random(),
+					formula: token.props.formula,
+					block: true,
+				})];
 			}
 
 			case 'search': {
