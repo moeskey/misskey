@@ -6805,6 +6805,10 @@ export interface Locale extends ILocale {
          */
         "social": string;
         /**
+         * メディアタイムラインでは、このサーバーにいるユーザー全員の添付ファイル付き投稿を見られます。
+         */
+        "media": string;
+        /**
          * グローバルタイムラインでは、接続している他のすべてのサーバーからの投稿を見られます。
          */
         "global": string;
@@ -10374,6 +10378,10 @@ export interface Locale extends ILocale {
          * ソーシャル
          */
         "social": string;
+        /**
+         * メディア
+         */
+        "media": string;
         /**
          * グローバル
          */

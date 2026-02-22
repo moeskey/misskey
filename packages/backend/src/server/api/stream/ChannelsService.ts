@@ -10,6 +10,7 @@ import { LocalTimelineChannelService } from './channels/local-timeline.js';
 import { HomeTimelineChannelService } from './channels/home-timeline.js';
 import { GlobalTimelineChannelService } from './channels/global-timeline.js';
 import { MutualTimelineChannelService } from './channels/mutual-timeline.js'
+import { MediaTimelineChannelService } from './channels/media-timeline.js';
 import { MainChannelService } from './channels/main.js';
 import { ChannelChannelService } from './channels/channel.js';
 import { AdminChannelService } from './channels/admin.js';
@@ -33,6 +34,7 @@ export class ChannelsService {
 		private homeTimelineChannelService: HomeTimelineChannelService,
 		private localTimelineChannelService: LocalTimelineChannelService,
 		private hybridTimelineChannelService: HybridTimelineChannelService,
+		private mediaTimelineChannelService: MediaTimelineChannelService,
 		private globalTimelineChannelService: GlobalTimelineChannelService,
 		private mutualTimelineChannelService: MutualTimelineChannelService,
 		private userListChannelService: UserListChannelService,
@@ -58,6 +60,7 @@ export class ChannelsService {
 			case 'homeTimeline': return this.homeTimelineChannelService;
 			case 'localTimeline': return this.localTimelineChannelService;
 			case 'hybridTimeline': return this.hybridTimelineChannelService;
+			case 'mediaTimeline': return this.mediaTimelineChannelService;
 			case 'globalTimeline': return this.globalTimelineChannelService;
 			case 'mutualTimeline': return this.mutualTimelineChannelService;
 			case 'userList': return this.userListChannelService;

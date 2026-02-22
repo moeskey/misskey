@@ -147,6 +147,14 @@ if (props.src === 'antenna') {
 		})),
 		useShallowRef: true,
 	}));
+} else if (props.src === 'media') {
+	paginator = markRaw(new Paginator('notes/media-timeline', {
+		computedParams: computed(() => ({
+			withRenotes: props.withRenotes,
+			withReplies: props.withReplies,
+		})),
+		useShallowRef: true,
+	}));
 } else if (props.src === 'global') {
 	paginator = markRaw(new Paginator('notes/global-timeline', {
 		computedParams: computed(() => ({
@@ -314,6 +322,7 @@ const connections = {
 	mutualTimeline: null as Misskey.IChannelConnection<Misskey.Channels['mutualTimeline']> | null,
 	localTimeline: null as Misskey.IChannelConnection<Misskey.Channels['localTimeline']> | null,
 	hybridTimeline: null as Misskey.IChannelConnection<Misskey.Channels['hybridTimeline']> | null,
+	mediaTimeline: null as Misskey.IChannelConnection<Misskey.Channels['mediaTimeline']> | null,
 	globalTimeline: null as Misskey.IChannelConnection<Misskey.Channels['globalTimeline']> | null,
 	main: null as Misskey.IChannelConnection<Misskey.Channels['main']> | null,
 	userList: null as Misskey.IChannelConnection<Misskey.Channels['userList']> | null,
@@ -349,6 +358,12 @@ function connectChannel() {
 			withFiles: props.onlyFiles ? true : undefined,
 		});
 		connections.localTimeline.on('note', prepend);
+	} else if (props.src === 'media') {
+		connections.mediaTimeline = stream.useChannel('mediaTimeline', {
+			withRenotes: props.withRenotes,
+			withReplies: props.withReplies,
+		});
+		connections.mediaTimeline.on('note', prepend);
 	} else if (props.src === 'social') {
 		connections.hybridTimeline = stream.useChannel('hybridTimeline', {
 			withRenotes: props.withRenotes,

@@ -110,6 +110,16 @@ export type Channels = {
 		};
 		receives: null;
 	};
+	mediaTimeline: {
+		params: {
+			withRenotes?: boolean;
+			withReplies?: boolean;
+		};
+		events: {
+			note: (payload: Note) => void;
+		};
+		receives: null;
+	};
 	globalTimeline: {
 		params: {
 			withRenotes?: boolean;

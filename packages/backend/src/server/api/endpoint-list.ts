@@ -323,6 +323,7 @@ export * as 'notes/favorites/delete' from './endpoints/notes/favorites/delete.js
 export * as 'notes/featured' from './endpoints/notes/featured.js';
 export * as 'notes/global-timeline' from './endpoints/notes/global-timeline.js';
 export * as 'notes/hybrid-timeline' from './endpoints/notes/hybrid-timeline.js';
+export * as 'notes/media-timeline' from './endpoints/notes/media-timeline.js';
 export * as 'notes/local-timeline' from './endpoints/notes/local-timeline.js';
 export * as 'notes/mutual-timeline' from './endpoints/notes/mutual-timeline.js';
 export * as 'notes/mentions' from './endpoints/notes/mentions.js';
