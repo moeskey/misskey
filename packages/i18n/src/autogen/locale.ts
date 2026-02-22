@@ -1561,6 +1561,10 @@ export interface Locale extends ILocale {
      */
     "disconnectService": string;
     /**
+     * 相互限定タイムラインを有効にする
+     */
+    "enableMutualTimeline": string;
+    /**
      * ローカルタイムラインを有効にする
      */
     "enableLocalTimeline": string;
@@ -6789,6 +6793,10 @@ export interface Locale extends ILocale {
          */
         "home": string;
         /**
+         * 相互タイムラインでは、相互フォローのアカウントの投稿を見られます。
+         */
+        "mutual": string;
+        /**
          * ローカルタイムラインでは、このサーバーにいるユーザー全員の投稿を見られます。
          */
         "local": string;
@@ -8053,6 +8061,10 @@ export interface Locale extends ILocale {
              * グローバルタイムラインの閲覧
              */
             "gtlAvailable": string;
+            /**
+             * 相互タイムラインの閲覧
+             */
+            "mtlAvailable": string;
             /**
              * ローカルタイムラインの閲覧
              */
@@ -10354,6 +10366,10 @@ export interface Locale extends ILocale {
          * ローカル
          */
         "local": string;
+        /**
+         * 相互
+         */
+        "mutual": string;
         /**
          * ソーシャル
          */

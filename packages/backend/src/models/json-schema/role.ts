@@ -172,6 +172,10 @@ export const packedRolePoliciesSchema = {
 			type: 'boolean',
 			optional: false, nullable: false,
 		},
+		mtlAvailable: {
+			type: 'boolean',
+			optional: false, nullable: false,
+		},
 		ltlAvailable: {
 			type: 'boolean',
 			optional: false, nullable: false,

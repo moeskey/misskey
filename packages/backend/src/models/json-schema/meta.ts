@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import mutualTimeline from "@/server/api/endpoints/notes/mutual-timeline.js";
+
 export const packedMetaLiteSchema = {
 	type: 'object',
 	optional: false, nullable: false,
@@ -334,6 +336,10 @@ export const packedMetaDetailedOnlySchema = {
 					optional: false, nullable: false,
 				},
 				globalTimeline: {
+					type: 'boolean',
+					optional: false, nullable: false,
+				},
+				mutualTimeline: {
 					type: 'boolean',
 					optional: false, nullable: false,
 				},

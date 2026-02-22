@@ -387,6 +387,7 @@ pages: "ページ"
 integration: "連携"
 connectService: "接続する"
 disconnectService: "切断する"
+enableMutualTimeline: "相互限定タイムラインを有効にする"
 enableLocalTimeline: "ローカルタイムラインを有効にする"
 enableGlobalTimeline: "グローバルタイムラインを有効にする"
 disablingTimelinesInfo: "これらのタイムラインを無効化しても、利便性のため管理者およびモデレーターは引き続き利用することができます。"
@@ -1729,6 +1730,7 @@ _initialTutorial:
 
 _timelineDescription:
   home: "ホームタイムラインでは、あなたがフォローしているアカウントの投稿を見られます。"
+  mutual: "相互タイムラインでは、相互フォローのアカウントの投稿を見られます。"
   local: "ローカルタイムラインでは、このサーバーにいるユーザー全員の投稿を見られます。"
   social: "ソーシャルタイムラインには、ホームタイムラインとローカルタイムラインの投稿が両方表示されます。"
   global: "グローバルタイムラインでは、接続している他のすべてのサーバーからの投稿を見られます。"
@@ -2091,6 +2093,7 @@ _role:
     high: "高"
   _options:
     gtlAvailable: "グローバルタイムラインの閲覧"
+    mtlAvailable: "相互タイムラインの閲覧"
     ltlAvailable: "ローカルタイムラインの閲覧"
     canPublicNote: "パブリック投稿の許可"
     mentionMax: "ノート内の最大メンション数"
@@ -2732,6 +2735,7 @@ _instanceCharts:
 _timelines:
   home: "ホーム"
   local: "ローカル"
+  mutual: "相互"
   social: "ソーシャル"
   global: "グローバル"
 

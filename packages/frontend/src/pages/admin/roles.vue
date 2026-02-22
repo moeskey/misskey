@@ -33,6 +33,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 						</MkSwitch>
 					</MkFolder>
 
+					<MkFolder v-if="matchQuery([i18n.ts._role._options.mtlAvailable, 'mtlAvailable'])">
+						<template #label>{{ i18n.ts._role._options.mtlAvailable }}</template>
+						<template #suffix>{{ policies.mtlAvailable ? i18n.ts.yes : i18n.ts.no }}</template>
+						<MkSwitch v-model="policies.mtlAvailable">
+							<template #label>{{ i18n.ts.enable }}</template>
+						</MkSwitch>
+					</MkFolder>
+
 					<MkFolder v-if="matchQuery([i18n.ts._role._options.ltlAvailable, 'ltlAvailable'])">
 						<template #label>{{ i18n.ts._role._options.ltlAvailable }}</template>
 						<template #suffix>{{ policies.ltlAvailable ? i18n.ts.yes : i18n.ts.no }}</template>

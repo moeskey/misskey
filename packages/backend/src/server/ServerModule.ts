@@ -50,6 +50,7 @@ import { ChatRoomChannelService } from './api/stream/channels/chat-room.js';
 import { ReversiChannelService } from './api/stream/channels/reversi.js';
 import { ReversiGameChannelService } from './api/stream/channels/reversi-game.js';
 import { SigninWithPasskeyApiService } from './api/SigninWithPasskeyApiService.js';
+import { MutualTimelineChannelService } from './api/stream/channels/mutual-timeline.js';
 
 @Module({
 	imports: [
@@ -95,6 +96,7 @@ import { SigninWithPasskeyApiService } from './api/SigninWithPasskeyApiService.j
 		HomeTimelineChannelService,
 		HybridTimelineChannelService,
 		LocalTimelineChannelService,
+		MutualTimelineChannelService,
 		QueueStatsChannelService,
 		ServerStatsChannelService,
 		UserListChannelService,

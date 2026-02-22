@@ -29,6 +29,7 @@ import { AccountMoveService } from '@/core/AccountMoveService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import type { ThinUser } from '@/queue/types.js';
 import Logger from '../logger.js';
+import { string } from '@tensorflow/tfjs-core';
 
 const logger = new Logger('following/create');
 
@@ -761,5 +762,34 @@ export class UserFollowingService implements OnModuleInit {
 			.getCount();
 
 		return count === 2;
+	}
+	@bindThis
+	public async getMutualFollowees(userId: MiUser['id']) {
+		return this.followingsRepository.createQueryBuilder('f1')
+			.select('f1.followeeId')
+			.innerJoin(
+				'following',
+				'f2',
+				'f2.followerId = f1.followeeId AND f2.followeeId = :userId',
+				{ userId },
+			)
+			.where('f1.followerId = :userId', { userId })
+			.getRawMany<{ f1_followeeId: string; followeeId?: string }>();
+	}
+
+	@bindThis
+	public async getMutualFolloweeIds(userId: MiUser['id']): Promise<MiUser['id'][]> {
+		const mutualFollowees = await this.followingsRepository.createQueryBuilder('f1')
+			.select('f1.followeeId', 'id')
+			.innerJoin(
+				'following',
+				'f2',
+				'f2.followerId = f1.followeeId AND f2.followeeId = :userId',
+				{ userId },
+			)
+			.where('f1.followerId = :userId', { userId })
+			.getRawMany<{ id: string }>();
+
+		return mutualFollowees.map(r => r.id as MiUser['id']);
 	}
 }

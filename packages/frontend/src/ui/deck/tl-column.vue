@@ -98,6 +98,8 @@ async function setType() {
 		items: [{
 			value: 'home', label: i18n.ts._timelines.home,
 		}, {
+			value: 'mutual', label: i18n.ts._timelines.mutual,
+		}, {
 			value: 'local', label: i18n.ts._timelines.local,
 		}, {
 			value: 'social', label: i18n.ts._timelines.social,

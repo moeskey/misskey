@@ -34,6 +34,7 @@ import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 // misskey-js の rolePolicies と同期すべし
 export type RolePolicies = {
 	gtlAvailable: boolean;
+	mtlAvailable: boolean;
 	ltlAvailable: boolean;
 	canPublicNote: boolean;
 	mentionLimit: number;
@@ -75,6 +76,7 @@ export type RolePolicies = {
 
 export const DEFAULT_POLICIES: RolePolicies = {
 	gtlAvailable: true,
+	mtlAvailable: true,
 	ltlAvailable: true,
 	canPublicNote: true,
 	mentionLimit: 20,
@@ -397,6 +399,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 		return {
 			gtlAvailable: calc('gtlAvailable', vs => vs.some(v => v === true)),
+			mtlAvailable: calc('mtlAvailable', vs => vs.some(v => v === true)),
 			ltlAvailable: calc('ltlAvailable', vs => vs.some(v => v === true)),
 			canPublicNote: calc('canPublicNote', vs => vs.some(v => v === true)),
 			mentionLimit: calc('mentionLimit', vs => Math.max(...vs)),
