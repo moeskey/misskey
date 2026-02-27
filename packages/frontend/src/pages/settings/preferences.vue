@@ -272,7 +272,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 							<SearchMarker :keywords="['ticker', 'information', 'label', 'instance', 'server', 'host', 'federation']">
 								<MkPreferenceContainer k="instanceTicker">
 									<MkSelect
-										v-if="instance.federation !== 'none'"
 										v-model="instanceTicker"
 										:items="[
 											{ label: i18n.ts._instanceTicker.none, value: 'none' },
@@ -298,6 +297,25 @@ SPDX-License-Identifier: AGPL-3.0-only
 										<template #label><SearchLabel>{{ i18n.ts.displayOfSensitiveMedia }}</SearchLabel></template>
 									</MkSelect>
 								</MkPreferenceContainer>
+							</SearchMarker>
+						</div>
+
+						<hr>
+
+						<div class="_gaps_m">
+
+							<SearchMarker :keywords="['renote', 'button']">
+								<MkSwitch v-model="selectRenoteVisibility">
+									<template #label><SearchLabel>{{ i18n.ts._preferencesFeatures.selectRenoteVisibility }}</SearchLabel><span class="_beta">{{ i18n.ts.originalFeature }}</span></template>
+									<template #caption><SearchText>{{ i18n.ts._preferencesFeatures.selectRenoteVisibilityDescription }}<br>{{ i18n.ts._preferencesFeatures.selectRenoteVisibilityDescription2 }}</SearchText></template>
+								</MkSwitch>
+							</SearchMarker>
+
+							<SearchMarker :keywords="['quote', 'renote', 'button']">
+								<MkSwitch v-model="separateQuoteButton">
+									<template #label><SearchLabel>{{ i18n.ts._preferencesFeatures.separateQuoteButton }}</SearchLabel><span class="_beta">{{ i18n.ts.originalFeature }}</span></template>
+									<template #caption><SearchText>{{ i18n.ts._preferencesFeatures.separateQuoteButtonDescription }}</SearchText></template>
+								</MkSwitch>
 							</SearchMarker>
 						</div>
 					</div>
@@ -915,6 +933,8 @@ const useNativeUiForVideoAudioPlayer = prefer.model('useNativeUiForVideoAudioPla
 const contextMenu = prefer.model('contextMenu');
 const menuStyle = prefer.model('menuStyle');
 const makeEveryTextElementsSelectable = prefer.model('makeEveryTextElementsSelectable');
+const selectRenoteVisibility = prefer.model('selectRenoteVisibility');
+const separateQuoteButton = prefer.model('separateQuoteButton');
 
 const fontSize = ref(miLocalStorage.getItem('fontSize'));
 const useSystemFont = ref(miLocalStorage.getItem('useSystemFont') != null);

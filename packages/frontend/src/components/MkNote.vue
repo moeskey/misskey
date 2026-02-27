@@ -144,6 +144,18 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<button v-else :class="$style.footerButton" class="_button" disabled>
 					<i class="ti ti-ban"></i>
 				</button>
+				<button
+					v-if="prefer.s.separateQuoteButton && canRenote"
+					ref="quoteButton"
+					:class="$style.footerButton"
+					class="_button"
+					@mousedown.prevent="quote()"
+				>
+					<i class="ti ti-quote"></i>
+				</button>
+				<button v-else-if="prefer.s.selectRenoteVisibility && prefer.s.separateQuoteButton && !canRenote" :class="$style.footerButton" class="_button" disabled>
+					<i class="ti ti-ban"></i>
+				</button>
 				<button ref="reactButton" :class="$style.footerButton" class="_button" @click="toggleReact()">
 					<i v-if="appearNote.reactionAcceptance === 'likeOnly' && $appearNote.myReaction != null" class="ti ti-heart-filled" style="color: var(--MI_THEME-love);"></i>
 					<i v-else-if="$appearNote.myReaction != null" class="ti ti-minus" style="color: var(--MI_THEME-accent);"></i>
@@ -229,7 +241,7 @@ import { reactionPicker } from '@/utility/reaction-picker.js';
 import { extractUrlFromMfm } from '@/utility/extract-url-from-mfm.js';
 import { $i } from '@/i.js';
 import { i18n } from '@/i18n.js';
-import { getAbuseNoteMenu, getCopyNoteLinkMenu, getNoteClipMenu, getNoteMenu, getRenoteMenu } from '@/utility/get-note-menu.js';
+import { getAbuseNoteMenu, getCopyNoteLinkMenu, getNoteClipMenu, getNoteMenu, getRenoteMenu, getQuoteMenu } from '@/utility/get-note-menu.js';
 import { noteEvents, useNoteCapture } from '@/composables/use-note-capture.js';
 import { deepClone } from '@/utility/clone.js';
 import { useTooltip } from '@/composables/use-tooltip.js';
@@ -300,6 +312,7 @@ const menuButton = useTemplateRef('menuButton');
 const renoteButton = useTemplateRef('renoteButton');
 const renoteTime = useTemplateRef('renoteTime');
 const reactButton = useTemplateRef('reactButton');
+const quoteButton = useTemplateRef('quoteButton');
 const clipButton = useTemplateRef('clipButton');
 const galleryEl = useTemplateRef('galleryEl');
 const isMyRenote = $i && ($i.id === note.userId);
@@ -464,6 +477,34 @@ if (!props.mock) {
 			}, {
 				closed: () => dispose(),
 			});
+		});
+	}
+}
+
+// from kokonect-link/cherrypick
+function quote(): void {
+	pleaseLogin({ openOnRemote: pleaseLoginContext.value });
+	if (!$i) return;
+	if (props.mock) {
+		return;
+	}
+	if (appearNote.channel) {
+		if (appearNote.channel.allowRenoteToExternal) {
+			const { menu } = getQuoteMenu({ note: note, mock: props.mock });
+			os.popupMenu(menu, quoteButton.value);
+		} else {
+			os.post({
+				renote: appearNote,
+				channel: appearNote.channel,
+			}).then(() => {
+				focus();
+			});
+		}
+	} else {
+		os.post({
+			renote: appearNote,
+		}).then(() => {
+			focus();
 		});
 	}
 }

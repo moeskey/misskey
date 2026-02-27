@@ -145,6 +145,8 @@ export function migrateOldSettings() {
 		prefer.commit('sound.on.reaction', store.s.sound_reaction as any);
 		prefer.commit('defaultNoteVisibility', store.s.defaultNoteVisibility);
 		prefer.commit('defaultNoteLocalOnly', store.s.defaultNoteLocalOnly);
+		prefer.commit('selectRenoteVisibility', store.s.selectRenoteVisibility);
+		prefer.commit('separateQuoteButton', store.s.separateQuoteButton);
 
 		window.setTimeout(() => {
 			unisonReload();

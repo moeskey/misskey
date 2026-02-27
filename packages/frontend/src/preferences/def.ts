@@ -464,6 +464,12 @@ export const PREF_DEF = definePreferences({
 	defaultVideoCompressionLevel: {
 		default: 2 as 0 | 1 | 2 | 3,
 	},
+	selectRenoteVisibility: {
+		default: true,
+	},
+	separateQuoteButton: {
+		default: true,
+	},
 
 	'sound.masterVolume': {
 		default: 0.5,

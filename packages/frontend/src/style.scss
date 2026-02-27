@@ -389,6 +389,16 @@ rt {
 	gap: var(--MI-margin);
 }
 
+._beta {
+	margin-left: 0.7em;
+	font-size: 65%;
+	padding: 2px 3px;
+	color: var(--MI_THEME-accent);
+	border: solid 1px var(--MI_THEME-accent);
+	border-radius: 4px;
+	vertical-align: auto;
+}
+
 ._buttons {
 	display: flex;
 	gap: 8px;

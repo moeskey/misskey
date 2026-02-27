@@ -5643,6 +5643,10 @@ export interface Locale extends ILocale {
      * ゼロ埋め
      */
     "zeroPadding": string;
+    /**
+     * 独自機能
+     */
+    "originalFeature": string;
     "_imageEditing": {
         "_vars": {
             /**
@@ -6219,6 +6223,32 @@ export interface Locale extends ILocale {
              */
             "sendOnEnter": string;
         };
+    };
+    "_preferencesFeatures": {
+        /**
+         * ノートの表示
+         */
+        "noteAppearance": string;
+        /**
+         * リノートの公開範囲を指定出来るようにする
+         */
+        "selectRenoteVisibility": string;
+        /**
+         * ノートのリノートボタンを押したとき、リノートの公開範囲を指定できるようになります。
+         */
+        "selectRenoteVisibilityDescription": string;
+        /**
+         * オンにすると、引用を経由せずにリノートの公開範囲を指定できるようになります。
+         */
+        "selectRenoteVisibilityDescription2": string;
+        /**
+         * 引用ボタンを分ける
+         */
+        "separateQuoteButton": string;
+        /**
+         * 通常のリノートボタンに加えて、引用ボタンを別に表示します。
+         */
+        "separateQuoteButtonDescription": string;
     };
     "_preferencesProfile": {
         /**

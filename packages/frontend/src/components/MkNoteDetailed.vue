@@ -160,7 +160,16 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<i class="ti ti-repeat"></i>
 					<p v-if="appearNote.renoteCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.renoteCount) }}</p>
 				</button>
-				<button v-else class="_button" :class="$style.noteFooterButton" disabled>
+				<button
+					v-if="prefer.s.separateQuoteButton && canRenote"
+					ref="quoteButton"
+					:class="$style.noteFooterButton"
+					class="_button"
+					@mousedown.prevent="quote()"
+				>
+					<i class="ti ti-quote"></i>
+				</button>
+				<button v-else-if="prefer.s.selectRenoteVisibility && prefer.s.separateQuoteButton && !canRenote" :class="$style.noteFooterButton" class="_button" disabled>
 					<i class="ti ti-ban"></i>
 				</button>
 				<button ref="reactButton" :class="$style.noteFooterButton" class="_button" @click="toggleReact()">
@@ -262,7 +271,7 @@ import { reactionPicker } from '@/utility/reaction-picker.js';
 import { extractUrlFromMfm } from '@/utility/extract-url-from-mfm.js';
 import { $i } from '@/i.js';
 import { i18n } from '@/i18n.js';
-import { getNoteClipMenu, getNoteMenu, getRenoteMenu } from '@/utility/get-note-menu.js';
+import { getNoteClipMenu, getNoteMenu, getQuoteMenu, getRenoteMenu } from '@/utility/get-note-menu.js';
 import { noteEvents, useNoteCapture } from '@/composables/use-note-capture.js';
 import { deepClone } from '@/utility/clone.js';
 import { useTooltip } from '@/composables/use-tooltip.js';
@@ -321,6 +330,7 @@ const { $note: $appearNote, subscribe: subscribeManuallyToNoteCapture } = useNot
 const rootEl = useTemplateRef('rootEl');
 const menuButton = useTemplateRef('menuButton');
 const renoteButton = useTemplateRef('renoteButton');
+const quoteButton = useTemplateRef('quoteButton');
 const renoteTime = useTemplateRef('renoteTime');
 const reactButton = useTemplateRef('reactButton');
 const clipButton = useTemplateRef('clipButton');
@@ -457,6 +467,32 @@ function renote() {
 
 	// リノート後は反応が来る可能性があるので手動で購読する
 	subscribeManuallyToNoteCapture();
+}
+
+
+// from kokonect-link/cherrypick
+function quote(): void {
+	pleaseLogin({ openOnRemote: pleaseLoginContext.value });
+	if (!$i) return;
+	if (appearNote.channel) {
+		if (appearNote.channel.allowRenoteToExternal) {
+			const { menu } = getQuoteMenu({ note: note });
+			os.popupMenu(menu, quoteButton.value);
+		} else {
+			os.post({
+				renote: appearNote,
+				channel: appearNote.channel,
+			}).then(() => {
+				focus();
+			});
+		}
+	} else {
+		os.post({
+			renote: appearNote,
+		}).then(() => {
+			focus();
+		});
+	}
 }
 
 function reply(): void {

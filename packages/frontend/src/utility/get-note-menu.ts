@@ -598,6 +598,7 @@ export function getRenoteMenu(props: {
 	const channelRenoteItems: MenuItem[] = [];
 	const normalRenoteItems: MenuItem[] = [];
 	const normalExternalChannelRenoteItems: MenuItem[] = [];
+	const visibilityRenoteItems: MenuItem[] = []; // from kokonect-link/cherrypick
 
 	if (appearNote.channel) {
 		channelRenoteItems.push(...[{
@@ -639,7 +640,7 @@ export function getRenoteMenu(props: {
 	}
 
 	if (!appearNote.channel || appearNote.channel.allowRenoteToExternal) {
-		normalRenoteItems.push(...[{
+		normalRenoteItems.push({
 			text: i18n.ts.renote,
 			icon: 'ti ti-repeat',
 			action: () => {
@@ -653,10 +654,10 @@ export function getRenoteMenu(props: {
 					});
 				}
 
-				const configuredVisibility = prefer.s.rememberNoteVisibility ? store.s.visibility : prefer.s.defaultNoteVisibility;
+				const configuredVisibility = (prefer.s.rememberNoteVisibility ? store.s.visibility : prefer.s.defaultNoteVisibility) as (typeof Misskey.noteVisibilities)[number];
 				const localOnly = prefer.s.rememberNoteVisibility ? store.s.localOnly : prefer.s.defaultNoteLocalOnly;
 
-				let visibility = appearNote.visibility;
+				let visibility: (typeof Misskey.noteVisibilities)[number] = appearNote.visibility as (typeof Misskey.noteVisibilities)[number];
 				visibility = smallerVisibility(visibility, configuredVisibility);
 				if (appearNote.channel?.isSensitive) {
 					visibility = smallerVisibility(visibility, 'home');
@@ -673,15 +674,71 @@ export function getRenoteMenu(props: {
 					});
 				}
 			},
-		}, ...(props.mock ? [] : [{
-			text: i18n.ts.quote,
-			icon: 'ti ti-quote',
-			action: () => {
-				os.post({
-					renote: appearNote,
+		});
+
+		// from kokonect-link/cherrypick
+		if (prefer.s.selectRenoteVisibility && !['followers', 'specified'].includes(appearNote.visibility)) {
+			const localOnly = store.s.rememberNoteVisibility ? (store.s.localOnly ?? false) : store.s.defaultNoteLocalOnly;
+
+			// renote to public
+			if (appearNote.visibility === 'public') {
+				visibilityRenoteItems.push({
+					text: `${i18n.ts.renote} (${i18n.ts._visibility.public})`,
+					icon: 'ti ti-world',
+					action: async() => {
+						misskeyApi('notes/create', {
+							localOnly,
+							visibility: 'public',
+							renoteId: appearNote.id,
+						}).then(() => {
+							os.toast(i18n.ts.renoted);
+						})
+					}
 				});
-			},
-		}])]);
+			}
+
+			// renote to home
+			if (['home', 'public'].includes(appearNote.visibility)) {
+				visibilityRenoteItems.push({
+					text: `${i18n.ts.renote} (${i18n.ts._visibility.home})`,
+					icon: 'ti ti-home',
+					action: async() => {
+						misskeyApi('notes/create', {
+							localOnly,
+							visibility: 'home',
+							renoteId: appearNote.id,
+						}).then(() => {
+							os.toast(i18n.ts.renoted);
+						})
+					}
+				});
+			}
+
+			// renote to follwers
+			visibilityRenoteItems.push({
+				text: `${i18n.ts.renote} (${i18n.ts._visibility.followers})`,
+				icon: 'ti ti-lock',
+				action: async() => {
+					misskeyApi('notes/create', {
+						localOnly,
+						visibility: 'followers',
+						renoteId: appearNote.id,
+					}).then(() => {
+						os.toast(i18n.ts.renoted);
+					})
+				}
+			});
+		}
+
+		if (!props.mock && !prefer.s.separateQuoteButton && !prefer.s.selectRenoteVisibility) {
+			normalRenoteItems.push({
+				text: i18n.ts.quote,
+				icon: 'ti ti-quote',
+				action: () => {
+					os.post({ renote: appearNote });
+				},
+			});
+		}
 
 		normalExternalChannelRenoteItems.push({
 			type: 'parent',
@@ -722,7 +779,8 @@ export function getRenoteMenu(props: {
 
 	const renoteItems = [
 		...normalRenoteItems,
-		...(channelRenoteItems.length > 0 && normalRenoteItems.length > 0) ? [{ type: 'divider' }] as MenuItem[] : [],
+		...visibilityRenoteItems,
+		...(channelRenoteItems.length > 0 && (normalRenoteItems.length > 0 || visibilityRenoteItems.length > 0)) ? [{ type: 'divider' }] as MenuItem[] : [],
 		...channelRenoteItems,
 		...(normalExternalChannelRenoteItems.length > 0 && (normalRenoteItems.length > 0 || channelRenoteItems.length > 0)) ? [{ type: 'divider' }] as MenuItem[] : [],
 		...normalExternalChannelRenoteItems,
@@ -731,4 +789,42 @@ export function getRenoteMenu(props: {
 	return {
 		menu: renoteItems,
 	};
+}
+
+// from kokonect-link/cherrypick
+export function getQuoteMenu(props: {
+	note: Misskey.entities.Note,
+	mock?: boolean;
+}) {
+	const menu: MenuItem[] = [];
+	const appearNote = getAppearNote(props.note);
+
+	if (appearNote && (!appearNote.channel || appearNote.channel.allowRenoteToExternal)) {
+		menu.push({
+			text: i18n.ts.quote,
+			icon: 'ti ti-quote',
+			action: () => {
+				os.post({
+					renote: appearNote,
+				});
+			},
+		});
+	}
+
+	if (appearNote && appearNote.channel) {
+		menu.push({
+			text: i18n.ts.inChannelQuote,
+			icon: 'ti ti-device-tv',
+			action: () => {
+				if (!props.mock) {
+					os.post({
+						renote: appearNote,
+						channel: appearNote.channel,
+					});
+				}
+			},
+		});
+	}
+
+	return { menu };
 }

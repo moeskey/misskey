@@ -1407,6 +1407,7 @@ youAreAdmin: "あなたは管理者です"
 frame: "フレーム"
 presets: "プリセット"
 zeroPadding: "ゼロ埋め"
+originalFeature: "独自機能"
 
 _imageEditing:
   _vars:
@@ -1565,6 +1566,14 @@ _settings:
   _chat:
     showSenderName: "送信者の名前を表示"
     sendOnEnter: "Enterで送信"
+
+_preferencesFeatures:
+  noteAppearance: "ノートの表示"
+  selectRenoteVisibility: "リノートの公開範囲を指定出来るようにする"
+  selectRenoteVisibilityDescription: "ノートのリノートボタンを押したとき、リノートの公開範囲を指定できるようになります。"
+  selectRenoteVisibilityDescription2: "オンにすると、引用を経由せずにリノートの公開範囲を指定できるようになります。"
+  separateQuoteButton: "引用ボタンを分ける"
+  separateQuoteButtonDescription: "通常のリノートボタンに加えて、引用ボタンを別に表示します。"
 
 _preferencesProfile:
   profileName: "プロファイル名"

@@ -467,6 +467,14 @@ export const store = markRaw(new Pizzax('base', {
 			sfxVolume: 1,
 		},
 	},
+	selectRenoteVisibility: {
+		where: 'device',
+		default: true,
+	},
+	separateQuoteButton: {
+		where: 'device',
+		default: true,
+	},
 	//#endregion
 }));
 
