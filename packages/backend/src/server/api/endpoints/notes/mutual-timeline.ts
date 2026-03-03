@@ -123,10 +123,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
             }
 
             const [
-                followings,
+                followings, mutualIds 
             ] = await Promise.all([
                 this.cacheService.userFollowingsCache.fetch(me.id),
+                this.userFollowingService.getMutualFolloweeIds(me.id),
             ]);
+            const mutualIdSet = new Set(mutualIds);
 
             const timeline = this.fanoutTimelineEndpointService.timeline({
                 untilId,
@@ -135,10 +137,17 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
                 allowPartial: ps.allowPartial,
                 me,
                 useDbFallback: this.serverSettings.enableFanoutTimelineDbFallback,
-                redisTimelines: ps.withFiles ? [`homeTimelineWithFiles:${me.id}`] : [`homeTimeline:${me.id}`],
+                redisTimelines: ps.withFiles ? [`mutualTimelineWithFiles:${me.id}`] : [`mutualTimeline:${me.id}`],
                 alwaysIncludeMyNotes: true,
                 excludePureRenotes: !ps.withRenotes,
+                // noteFilterで相互フォローのみに絞る
                 noteFilter: note => {
+                    // 自分のノートは常に表示
+                    if (note.userId === me.id) return true;
+
+                    // 相互フォロー外は除外
+                    if (!mutualIdSet.has(note.userId)) return false;
+
                     if (note.reply && note.reply.visibility === 'followers') {
                         if (!Object.hasOwn(followings, note.reply.userId) && note.reply.userId !== me.id) return false;
                     }

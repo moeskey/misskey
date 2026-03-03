@@ -1011,8 +1011,10 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 			for (const channelFollowing of channelFollowings) {
 				this.fanoutTimelineService.push(`homeTimeline:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
+				this.fanoutTimelineService.push(`mutualTimeline:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
 				if (note.fileIds.length > 0) {
 					this.fanoutTimelineService.push(`homeTimelineWithFiles:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
+					this.fanoutTimelineService.push(`mutualTimelineWithFiles:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
 				}
 			}
 		} else {
@@ -1035,6 +1037,19 @@ export class NoteCreateService implements OnApplicationShutdown {
 				}),
 			]);
 
+			let mutualFollowerIds = new Set<MiUser['id']>();
+
+			if (followings.length > 0) {
+				const mutualFollowings = await this.followingsRepository.find({
+					where: {
+						followerId: user.id,
+						followeeId: In(followings.map(f => f.followerId)),
+					},
+					select: ['followeeId'],
+				});
+				mutualFollowerIds = new Set(mutualFollowings.map(x => x.followeeId));
+			}
+
 			if (note.visibility === 'followers') {
 				// TODO: 重そうだから何とかしたい Set 使う？
 				userListMemberships = userListMemberships.filter(x => x.userListUserId === user.id || followings.some(f => f.followerId === x.userListUserId));
@@ -1053,6 +1068,13 @@ export class NoteCreateService implements OnApplicationShutdown {
 				this.fanoutTimelineService.push(`homeTimeline:${following.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
 				if (note.fileIds.length > 0) {
 					this.fanoutTimelineService.push(`homeTimelineWithFiles:${following.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
+				}
+
+				if (mutualFollowerIds.has(following.followerId)) {
+					this.fanoutTimelineService.push(`mutualTimeline:${following.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
+					if (note.fileIds.length > 0) {
+						this.fanoutTimelineService.push(`mutualTimelineWithFiles:${following.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
+					}
 				}
 			}
 
@@ -1075,12 +1097,14 @@ export class NoteCreateService implements OnApplicationShutdown {
 				}
 			}
 
-			// 自分自身のHTL
+			// 自分自身のHTL / MTL
 			if (note.userHost == null) {
 				if (note.visibility !== 'specified' || !note.visibleUserIds.some(v => v === user.id)) {
 					this.fanoutTimelineService.push(`homeTimeline:${user.id}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
+					this.fanoutTimelineService.push(`mutualTimeline:${user.id}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
 					if (note.fileIds.length > 0) {
 						this.fanoutTimelineService.push(`homeTimelineWithFiles:${user.id}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
+						this.fanoutTimelineService.push(`mutualTimelineWithFiles:${user.id}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
 					}
 				}
 			}
