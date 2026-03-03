@@ -995,6 +995,8 @@ export class NoteCreateService implements OnApplicationShutdown {
 	private async pushToTl(note: MiNote, user: { id: MiUser['id']; host: MiUser['host']; }) {
 		if (!this.meta.enableFanoutTimeline) return;
 
+		let mutualFollowerIds = new Set<MiUser['id']>();
+
 		const r = this.redisForTimelines.pipeline();
 
 		if (note.channelId) {
@@ -1011,10 +1013,16 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 			for (const channelFollowing of channelFollowings) {
 				this.fanoutTimelineService.push(`homeTimeline:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
-				this.fanoutTimelineService.push(`mutualTimeline:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
 				if (note.fileIds.length > 0) {
 					this.fanoutTimelineService.push(`homeTimelineWithFiles:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
-					this.fanoutTimelineService.push(`mutualTimelineWithFiles:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
+				}
+
+				// 相互フォローの場合のみmutualTimelineにpush
+				if (mutualFollowerIds.has(channelFollowing.followerId)) {
+					this.fanoutTimelineService.push(`mutualTimeline:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax, r);
+					if (note.fileIds.length > 0) {
+						this.fanoutTimelineService.push(`mutualTimelineWithFiles:${channelFollowing.followerId}`, note.id, this.meta.perUserHomeTimelineCacheMax / 2, r);
+					}
 				}
 			}
 		} else {
@@ -1036,8 +1044,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 					select: ['userListId', 'userListUserId', 'withReplies'],
 				}),
 			]);
-
-			let mutualFollowerIds = new Set<MiUser['id']>();
 
 			if (followings.length > 0) {
 				const mutualFollowings = await this.followingsRepository.find({
