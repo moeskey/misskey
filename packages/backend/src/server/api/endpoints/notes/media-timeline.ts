@@ -23,10 +23,12 @@ export const meta = {
 
 	res: {
 		type: 'array',
-		optional: false, nullable: false,
+		optional: false,
+		nullable: false,
 		items: {
 			type: 'object',
-			optional: false, nullable: false,
+			optional: false,
+			nullable: false,
 			ref: 'Note',
 		},
 	},
@@ -43,12 +45,11 @@ export const meta = {
 export const paramDef = {
 	type: 'object',
 	properties: {
-		withRenotes: { type: 'boolean', default: true },
 		withReplies: { type: 'boolean', default: false },
 		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
 		sinceId: { type: 'string', format: 'misskey:id' },
 		untilId: { type: 'string', format: 'misskey:id' },
-		allowPartial: { type: 'boolean', default: false }, // true is recommended but for compatibility false by default
+		allowPartial: { type: 'boolean', default: false },
 		sinceDate: { type: 'integer' },
 		untilDate: { type: 'integer' },
 	},
@@ -107,7 +108,21 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				useDbFallback: this.serverSettings.enableFanoutTimelineDbFallback,
 				redisTimelines: ['localTimelineWithFiles'],
 				alwaysIncludeMyNotes: false,
-				excludePureRenotes: !ps.withRenotes,
+				excludePureRenotes: true,
+				noteFilter: note => {
+					if (note.fileIds == null || note.fileIds.length === 0) return false;
+					if (note.user?.host !== null) return false;
+					if (note.visibility !== 'public') return false;
+					if (note.channelId != null) return false;
+
+					if (!ps.withReplies && note.reply) {
+						const reply = note.reply;
+						const isMe = me != null && note.userId === me.id;
+						if (reply.userId !== me?.id && !isMe && reply.userId !== note.userId) return false;
+					}
+
+					return true;
+				},
 				dbFallback: async (untilId, sinceId, limit) => await this.getFromDb({
 					untilId,
 					sinceId,
@@ -132,8 +147,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		limit: number,
 		withReplies: boolean,
 	}, me: MiLocalUser | null) {
-		const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'),
-			ps.sinceId, ps.untilId)
+		const query = this.queryService.makePaginationQuery(
+			this.notesRepository.createQueryBuilder('note'),
+			ps.sinceId,
+			ps.untilId,
+		)
 			.andWhere('(note.visibility = \'public\') AND (note.userHost IS NULL) AND (note.channelId IS NULL)')
 			.andWhere('note.fileIds != \'{}\'')
 			.innerJoinAndSelect('note.user', 'user')
@@ -144,12 +162,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		this.queryService.generateVisibilityQuery(query, me);
 		this.queryService.generateBaseNoteFilteringQuery(query, me);
+
 		if (me) {
 			this.queryService.generateMutedUserRenotesQueryForNotes(query, me);
 
 			const mutedChannelIds = await this.channelMutingService
 				.list({ requestUserId: me.id }, { idOnly: true })
 				.then(x => x.map(x => x.id));
+
 			if (mutedChannelIds.length > 0) {
 				query.andWhere(new Brackets(qb => {
 					qb.orWhere('note.renoteChannelId IS NULL')
@@ -158,16 +178,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			}
 		}
 
-		if (ps.withFiles) {
-			query.andWhere('note.fileIds != \'{}\'');
-		}
-
 		if (!ps.withReplies) {
 			query.andWhere(new Brackets(qb => {
 				qb
-					.where('note.replyId IS NULL') // 返信ではない
+					.where('note.replyId IS NULL')
 					.orWhere(new Brackets(qb => {
-						qb // 返信だけど投稿者自身への返信
+						qb
 							.where('note.replyId IS NOT NULL')
 							.andWhere('note.replyUserId = note.userId');
 					}));

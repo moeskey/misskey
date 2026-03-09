@@ -3,117 +3,104 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import type { Packed } from '@/misc/json-schema.js';
-import { MetaService } from '@/core/MetaService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { bindThis } from '@/decorators.js';
-import { RoleService } from '@/core/RoleService.js';
-import { isQuotePacked, isRenotePacked } from '@/misc/is-renote.js';
-import type { JsonObject } from '@/misc/json-value.js';
-import Channel, { type MiChannelService } from '../channel.js';
+import { NoteStreamingHidingService } from '../NoteStreamingHidingService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
+import { bindThis } from '@/decorators.js';
+import { isRenotePacked, isQuotePacked } from '@/misc/is-renote.js';
+import type { JsonObject } from '@/misc/json-value.js';
+import Channel, { type ChannelRequest } from '../channel.js';
 
-class MutualTimelineChannel extends Channel {
-    public readonly chName = 'mutualTimeline';
-    public static shouldShare = false;
-    public static requireCredential = false as const;
-    private withRenotes: boolean;
-    private withReplies: boolean;
-    private withFiles: boolean;
-    private mutualIds = new Set<string>();
+@Injectable({ scope: Scope.TRANSIENT })
+export class MutualTimelineChannel extends Channel {
+	public readonly chName = 'mutualTimeline';
+	public static shouldShare = false;
+	public static requireCredential = true as const;
+	public static kind = 'read:account';
 
-    constructor(
-        private metaService: MetaService,
-        private roleService: RoleService,
-        private noteEntityService: NoteEntityService,
-        private userFollowingService: UserFollowingService,
+	private withRenotes: boolean;
+	private withFiles: boolean;
+	private mutualIds = new Set<string>();
 
-        id: string,
-        connection: Channel['connection'],
-    ) {
-        super(id, connection);
-        //this.onNote = this.onNote.bind(this);
-    }
+	constructor(
+		@Inject(REQUEST)
+		request: ChannelRequest,
 
-    @bindThis
-    public async init(params: JsonObject) {
-        if (!this.user) return;
-        const policies = await this.roleService.getUserPolicies(this.user ? this.user.id : null);
-        if (!policies.mtlAvailable) return;
+		private noteEntityService: NoteEntityService,
+		private noteStreamingHidingService: NoteStreamingHidingService,
+		private userFollowingService: UserFollowingService,
+	) {
+		super(request);
+	}
 
-        this.withRenotes = !!(params.withRenotes ?? true);
-        this.withReplies = !!(params.withReplies ?? false);
-        this.withFiles = !!(params.withFiles ?? false);
+	@bindThis
+	public async init(params: JsonObject) {
+		this.withRenotes = !!(params.withRenotes ?? true);
+		this.withFiles = !!(params.withFiles ?? false);
 
-        const mutualIds = await this.userFollowingService.getMutualFolloweeIds(this.user.id);
-        this.mutualIds = new Set(mutualIds);
+		const mutualIds = await this.userFollowingService.getMutualFolloweeIds(this.user!.id);
+		this.mutualIds = new Set(mutualIds);
 
-        // Subscribe events
-        this.subscriber.on('notesStream', this.onNote);
-    }
+		this.subscriber.on('notesStream', this.onNote);
+	}
 
-    @bindThis
-    private async onNote(note: Packed<'Note'>) {
-        if (this.withFiles && (note.fileIds == null || note.fileIds.length === 0)) return;
+	@bindThis
+	private async onNote(note: Packed<'Note'>) {
+		const isMe = this.user!.id === note.userId;
 
-        if (!this.user) return;
-        if (note.userId !== this.user.id && !this.mutualIds.has(note.userId)) return;
-        if (note.user.requireSigninToViewContents && this.user == null) return;
-        if (note.renote && note.renote.user.requireSigninToViewContents && this.user == null) return;
-        if (note.reply && note.reply.user.requireSigninToViewContents && this.user == null) return;
+		if (this.withFiles && (note.fileIds == null || note.fileIds.length === 0)) return;
 
-        // 関係ない返信は除外
-        if (note.reply && this.user && !this.following[note.userId]?.withReplies && !this.withReplies) {
-            const reply = note.reply;
-            // 「チャンネル接続主への返信」でもなければ、「チャンネル接続主が行った返信」でもなければ、「投稿者の投稿者自身への返信」でもない場合
-            if (reply.userId !== this.user.id && note.userId !== this.user.id && reply.userId !== note.userId) return;
-        }
+		// 自分自身または相互フォロー相手以外は弾く
+		if (!isMe && !this.mutualIds.has(note.userId)) return;
 
-        if (isRenotePacked(note) && !isQuotePacked(note) && !this.withRenotes) return;
+		if (!this.isNoteVisibleForMe(note)) return;
 
-        if (this.isNoteMutedOrBlocked(note)) return;
+		if (note.reply) {
+			const reply = note.reply;
 
-        if (this.user && isRenotePacked(note) && !isQuotePacked(note)) {
-            if (note.renote && Object.keys(note.renote.reactions).length > 0) {
-                const myRenoteReaction = await this.noteEntityService.populateMyReaction(note.renote, this.user.id);
-                note.renote.myReaction = myRenoteReaction;
-            }
-        }
+			if (this.following[note.userId]?.withReplies) {
+				// visibility: followers な投稿への返信のうち、自分が見えないものを除外
+				if (reply.visibility === 'followers' && !Object.hasOwn(this.following, reply.userId) && reply.userId !== this.user!.id) {
+					return;
+				}
+			} else {
+				// 「自分宛ての返信」「自分がした返信」「自分自身への返信」以外は除外
+				if (reply.userId !== this.user!.id && !isMe && reply.userId !== note.userId) return;
+			}
+		}
 
-        this.send('note', note);
-    }
+		// 純粋なリノート
+		if (isRenotePacked(note) && !isQuotePacked(note) && note.renote) {
+			if (!this.withRenotes) return;
 
-    @bindThis
-    public dispose() {
-        // Unsubscribe events
-        this.subscriber.off('notesStream', this.onNote);
-    }
-}
+			if (note.renote.reply) {
+				const reply = note.renote.reply;
+				if (reply.visibility === 'followers' && !Object.hasOwn(this.following, reply.userId) && reply.userId !== this.user!.id) {
+					return;
+				}
+			}
+		}
 
-@Injectable()
-export class MutualTimelineChannelService implements MiChannelService<false> {
-    public readonly shouldShare = MutualTimelineChannel.shouldShare;
-    public readonly requireCredential = MutualTimelineChannel.requireCredential;
-    public readonly kind = MutualTimelineChannel.kind;
+		if (this.isNoteMutedOrBlocked(note)) return;
 
-    constructor(
-        private metaService: MetaService,
-        private roleService: RoleService,
-        private noteEntityService: NoteEntityService,
-        private userFollowingService: UserFollowingService,
-    ) {
-    }
+		const { shouldSkip } = await this.noteStreamingHidingService.processHiding(note, this.user!.id);
+		if (shouldSkip) return;
 
-    @bindThis
-    public create(id: string, connection: Channel['connection']): MutualTimelineChannel {
-        return new MutualTimelineChannel(
-            this.metaService,
-            this.roleService,
-            this.noteEntityService,
-            this.userFollowingService,
-            id,
-            connection,
-        );
-    }
+		if (isRenotePacked(note) && !isQuotePacked(note)) {
+			if (note.renote && Object.keys(note.renote.reactions).length > 0) {
+				const myRenoteReaction = await this.noteEntityService.populateMyReaction(note.renote, this.user!.id);
+				note.renote.myReaction = myRenoteReaction;
+			}
+		}
+
+		this.send('note', note);
+	}
+
+	@bindThis
+	public dispose() {
+		this.subscriber.off('notesStream', this.onNote);
+	}
 }

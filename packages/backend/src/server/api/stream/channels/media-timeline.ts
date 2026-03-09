@@ -3,44 +3,38 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import type { Packed } from '@/misc/json-schema.js';
-import { MetaService } from '@/core/MetaService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteStreamingHidingService } from '../NoteStreamingHidingService.js';
 import { bindThis } from '@/decorators.js';
-import { RoleService } from '@/core/RoleService.js';
 import { isQuotePacked, isRenotePacked } from '@/misc/is-renote.js';
 import type { JsonObject } from '@/misc/json-value.js';
-import Channel, { type MiChannelService } from '../channel.js';
+import Channel, { type ChannelRequest } from '../channel.js';
 
-class MediaTimelineChannel extends Channel {
+@Injectable({ scope: Scope.TRANSIENT })
+export class MediaTimelineChannel extends Channel {
 	public readonly chName = 'mediaTimeline';
-	public static shouldShare = false;
+	public static shouldShare = false as const;
 	public static requireCredential = false as const;
-	private withRenotes: boolean;
+
 	private withReplies: boolean;
 
 	constructor(
-		private metaService: MetaService,
-		private roleService: RoleService,
-		private noteEntityService: NoteEntityService,
+		@Inject(REQUEST)
+		request: ChannelRequest,
 
-		id: string,
-		connection: Channel['connection'],
+		private noteEntityService: NoteEntityService,
+		private noteStreamingHidingService: NoteStreamingHidingService,
 	) {
-		super(id, connection);
-		//this.onNote = this.onNote.bind(this);
+		super(request);
 	}
 
 	@bindThis
 	public async init(params: JsonObject) {
-		const policies = await this.roleService.getUserPolicies(this.user ? this.user.id : null);
-		if (!policies.ltlAvailable) return;
-
-		this.withRenotes = !!(params.withRenotes ?? false);
 		this.withReplies = !!(params.withReplies ?? false);
 
-		// Subscribe events
 		this.subscriber.on('notesStream', this.onNote);
 	}
 
@@ -55,16 +49,18 @@ class MediaTimelineChannel extends Channel {
 		if (note.renote && note.renote.user.requireSigninToViewContents && this.user == null) return;
 		if (note.reply && note.reply.user.requireSigninToViewContents && this.user == null) return;
 
-		// 関係ない返信は除外
 		if (note.reply && this.user && !this.following[note.userId]?.withReplies && !this.withReplies) {
 			const reply = note.reply;
-			// 「チャンネル接続主への返信」でもなければ、「チャンネル接続主が行った返信」でもなければ、「投稿者の投稿者自身への返信」でもない場合
 			if (reply.userId !== this.user.id && note.userId !== this.user.id && reply.userId !== note.userId) return;
 		}
 
-		if (isRenotePacked(note) && !isQuotePacked(note) && !this.withRenotes) return;
+		// メディアTLでは純リノートは流さない
+		if (isRenotePacked(note) && !isQuotePacked(note)) return;
 
 		if (this.isNoteMutedOrBlocked(note)) return;
+
+		const { shouldSkip } = await this.noteStreamingHidingService.processHiding(note, this.user?.id ?? null);
+		if (shouldSkip) return;
 
 		if (this.user && isRenotePacked(note) && !isQuotePacked(note)) {
 			if (note.renote && Object.keys(note.renote.reactions).length > 0) {
@@ -78,32 +74,6 @@ class MediaTimelineChannel extends Channel {
 
 	@bindThis
 	public dispose() {
-		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
-	}
-}
-
-@Injectable()
-export class MediaTimelineChannelService implements MiChannelService<false> {
-	public readonly shouldShare = MediaTimelineChannel.shouldShare;
-	public readonly requireCredential = MediaTimelineChannel.requireCredential;
-	public readonly kind = MediaTimelineChannel.kind;
-
-	constructor(
-		private metaService: MetaService,
-		private roleService: RoleService,
-		private noteEntityService: NoteEntityService,
-	) {
-	}
-
-	@bindThis
-	public create(id: string, connection: Channel['connection']): MediaTimelineChannel {
-		return new MediaTimelineChannel(
-			this.metaService,
-			this.roleService,
-			this.noteEntityService,
-			id,
-			connection,
-		);
 	}
 }
