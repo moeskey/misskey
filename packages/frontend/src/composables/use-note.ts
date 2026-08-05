@@ -18,7 +18,7 @@ import * as sound from '@/utility/sound.js';
 import * as os from '@/os.js';
 import { reactionPicker } from '@/utility/reaction-picker.js';
 import { extractUrlFromMfm } from '@/utility/extract-url-from-mfm.js';
-import { getNoteClipMenu, getNoteMenu, getRenoteMenu, getAbuseNoteMenu, getCopyNoteLinkMenu } from '@/utility/get-note-menu.js';
+import { getNoteClipMenu, getNoteMenu, getRenoteMenu, getAbuseNoteMenu, getCopyNoteLinkMenu, getQuoteMenu } from '@/utility/get-note-menu.js';
 import { noteEvents, useNoteCapture } from '@/composables/use-note-capture.js';
 import { deepClone } from '@/utility/clone.js';
 import { useTooltip } from '@/composables/use-tooltip.js';
@@ -46,6 +46,7 @@ export interface UseNoteProps {
 }
 
 export interface UseNoteElements {
+	quoteButton?: Ref<HTMLElement | null>;
 	rootEl?: Ref<HTMLElement | null>;
 	menuButton?: Ref<HTMLElement | null>;
 	renoteButton?: Ref<HTMLElement | null>;
@@ -416,6 +417,37 @@ export function useNote(
 		}
 	}
 
+	// from kokonect-link/cherrypick
+	function quote(): void {
+		pleaseLogin({ openOnRemote: pleaseLoginContext.value });
+		if (!$i) return;
+		if (props.mock) {
+			return;
+		}
+		if (appearNote.channel) {
+			if (appearNote.channel.allowRenoteToExternal) {
+				const { menu } = getQuoteMenu({
+					note: rawNote,
+					mock: props.mock,
+				});
+				os.popupMenu(menu, els.quoteButton?.value).then(focus);
+			} else {
+				os.post({
+					renote: appearNote,
+					channel: appearNote.channel,
+				}).then(() => {
+					focus();
+				});
+			}
+		} else {
+			os.post({
+				renote: appearNote,
+			}).then(() => {
+				focus();
+			});
+		}
+	}
+
 	// フォーカス制御
 	function focus() { els.rootEl?.value?.focus(); }
 
@@ -447,6 +479,7 @@ export function useNote(
 
 		// アクション関数
 		renote,
+		quote,
 		reply,
 		react,
 		reactViaMfmEmoji,
